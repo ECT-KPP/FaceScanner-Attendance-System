@@ -22,10 +22,29 @@ h1{font-size:clamp(1rem,4.6vw,1.3rem);margin:2px 0;text-align:center}
 .zone.out{background:rgba(239,68,68,.15);color:var(--bad);border-color:var(--bad)}
 .zone.err{background:rgba(245,158,11,.15);color:var(--warn);border-color:var(--warn)}
 
-.cam{position:relative;width:100%;max-width:420px;aspect-ratio:3/4;max-height:60vh;max-height:calc(100dvh - 300px);min-height:220px;background:#000;border-radius:20px;overflow:hidden;border:3px solid var(--ac)}
+.cam {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: #000;
+  border-radius: 20px;
+  border: 3px solid var(--ac);
+}
 .cam.out{border-color:var(--bad)}
 .cam.in{border-color:var(--ok)}
-.cam video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.cam video {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transform: scaleX(-1);
+  -webkit-transform: scaleX(-1);
+}
 .ring{position:absolute;inset:12% 14%;border:3px dashed rgba(255,255,255,.55);border-radius:50%;pointer-events:none}
 .msg{margin-top:12px;font-size:clamp(.95rem,4vw,1.1rem);text-align:center;min-height:1.6em;max-width:420px}
 .gps{margin-top:6px;font-size:.85rem;color:var(--mut);text-align:center}
@@ -60,7 +79,9 @@ a:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
 <div class="clock" id="clock"></div>
 <div class="zone wait" id="zone" role="status" aria-live="polite">กำลังตรวจสอบตำแหน่ง...</div>
 <div class="cam" id="cam">
-  <video id="v" playsinline muted></video>
+  <video id="v" autoplay playsinline
+       webkit-playsinline muted>
+</video>
   <div class="ring"></div>
   <div class="result" id="res"></div>
 </div>
@@ -117,8 +138,19 @@ function updateZone() {
 }
 
 async function initTf() {
-  try { await faceapi.tf.setBackend('webgl'); await faceapi.tf.ready(); }
-  catch (e) { await faceapi.tf.setBackend('cpu'); await faceapi.tf.ready(); }
+  try {
+    const ok = await faceapi.tf.setBackend('webgl');
+
+    if (!ok) throw new Error('WebGL unavailable');
+
+    await faceapi.tf.ready();
+
+  } catch (e) {
+    await faceapi.tf.setBackend('cpu');
+    await faceapi.tf.ready();
+  }
+
+  console.log('Backend:', faceapi.tf.getBackend());
 }
 function startGps() {
   if (!navigator.geolocation) { $('gps').textContent = 'อุปกรณ์นี้ไม่รองรับ GPS'; return updateZone(); }
